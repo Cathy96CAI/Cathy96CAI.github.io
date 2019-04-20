@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<!-- Head tag -->
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <!--Description-->
+  
+  <meta name="description" content="试验田与储藏间">
+  
+
+  <!--Author-->
+  
+  <meta name="author" content="Cathy CAI">
+  
+
+  <!--Open Graph Title-->
+  
+      <meta property="og:title" content="Kaggle practice--Titanic survival prediction (上)">
+  
+  <!--Open Graph Description-->
+  
+      <meta property="og:description" content="试验田与储藏间">
+  
+  <!--Open Graph Site Name-->
+  <meta property="og:site_name" content="Just A Store">
+  <!--Type page-->
+  
+      <meta property="og:type" content="article">
+  
+  <!--Page Cover-->
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <!-- Title -->
+  
+  <title>Kaggle practice--Titanic survival prediction (上) - Just A Store</title>
+
+
+  <link rel="shortcut icon" href="https://hexo.io/icon/favicon-96x96.png">
+
+  <!-- Custom CSS/Sass -->
+  <link rel="stylesheet" href="/css/style.css">
+
+  <!----------------------------
+  https://github.com/GallenHu/hexo-theme-Daily
+
+ _____            _   _
+|  __ \          (_) | |
+| |  | |   __ _   _  | |  _   _
+| |  | |  / _` | | | | | | | | |
+| |__| | | (_| | | | | | | |_| |
+|_____/   \__,_| |_| |_|  \__, |
+                          __/ |
+                         |___/
+
+    --------------------------->
+
+</head>
+
+
+<body>
+
+  <!-- Nav -->
+  <header class="site-header">
+  <div class="header-inside">
+    <div class="logo">
+      <a href="/" rel="home">
+        
+        <img src="https://hexo.io/logo.svg" alt="Just A Store" height="60">
+        
+      </a>
+    </div>
+    <!-- Navigation -->
+    <nav class="navbar">
+      <!-- Collect the nav links, forms, and other content for toggling -->
+      <div class="collapse">
+        <ul class="navbar-nav">
+          
+          
+            <li>
+              <a href="/.">
+                
+                  Home
+                
+              </a>
+            </li>
+          
+            <li>
+              <a href="/archives">
+                
+                  Archive
+                
+              </a>
+            </li>
+          
+            <li>
+              <a href="/about">
+                
+                  About
+                
+              </a>
+            </li>
+          
+        </ul>
+      </div>
+      <!-- /.navbar-collapse -->
+    </nav>
+    <div class="button-wrap">
+      <button class="menu-toggle">Primary Menu</button>
+    </div>
+  </div>
+</header>
+
+
+  <!-- Main Content -->
+  <div class="content-area">
+  <div class="post">
+    <!-- Post Content -->
+    <div class="container">
+      <article>
+        <!-- Title date & tags -->
+        <div class="post-header">
+          <h1 class="entry-title">
+            Kaggle practice--Titanic survival prediction (上)
+            
+          </h1>
+          <p class="posted-on">
+          2019-04-18
+          </p>
+          <div class="tags-links">
+            
+              
+            
+          </div>
+        </div>
+        <!-- Post Main Content -->
+        <div class="entry-content has_line_number">
+          <p>##Survival prediction on Titanic</p>
+<p>###Description</p>
+<p>泰坦尼克号沉没是历史上最臭名昭着的沉船之一。 1912年4月15日，在她的处女航中，泰坦尼克号在与冰山相撞后沉没，在2224名乘客和机组人员中造成1502人死亡。 造成海难失事的原因之一是乘客和机组人员没有足够的救生艇。 </p>
+<p>###Objective</p>
+<p>尽管幸存下沉有一些运气因素，但有些人比其他人更容易生存，例如妇女，儿童和上流社会。因此，我们希望运用Binary classification分析乘客特征并预测哪些乘客能幸免于悲剧。</p>
+<p>###Steps</p>
+<ul>
+<li>加载包和数据集</li>
+<li>特征工程</li>
+<li>缺失值处理</li>
+<li>建模</li>
+<li>预测</li>
+<li>总结</li>
+</ul>
+<p>###Detail</p>
+<p>1.加载包和数据集</p>
+<hr>
+<pre><code>setwd(&quot;C:/Users/czwcj/Desktop/titanic&quot;)  #记得加&quot;&quot;
+library(&apos;ggplot2&apos;)   #visualization
+library(&apos;ggthemes&apos;)  #visualization
+library(&apos;scales&apos;)    #visualization
+library(&apos;dplyr&apos;)     #data manipulation
+library(&apos;mice&apos;)      #imputation
+library(&apos;randomForest&apos;)  #classification algorithm  
+
+
+train &lt;- read.csv(&quot;train.csv&quot;,stringsAsFactors = F)  #注意stringsAsFactors = F这个限制条件，不加会导致后面特征工程出问题，加了以后sex这个attribute就是character属性
+test &lt;- read.csv(&quot;test.csv&quot;,stringsAsFactors = F)
+full &lt;- bind_rows(train, test)
+
+View(full)
+str(full)  #查看前几行数据及其结构以便对整体数据集有大致了解
+</code></pre><ol start="2">
+<li>特征工程（feature engineering）</li>
+</ol>
+<p>由dataset中的attribute可以想到，性别、年龄、家庭因素（由name，sibsp，parch得到）、船票价格、船舱级别、出发口岸可能会影响到生存情况。</p>
+<p>首先我们先处理合并家庭因素。</p>
+<ol start="2">
+<li>1 从姓名我们能得到什么</li>
+</ol>
+<p>check data后，我们可以看出Name的组成格式：姓-称谓-名。因此，称谓隐藏的性别，社会地位可以成为影响生存情况的因素之一；姓氏和sibsp及parch结合可以得出出行的家庭人数，同样会影响生存情况。</p>
+<pre><code>full$Title &lt;- gsub(&quot;(.*,)|(\\..*)&quot;,&quot;&quot;,full$Name) 
+table(full$Title)
+</code></pre><p>gsub是替换语句，将full$Name这个变量里第一个“ ”中的内容替换成第二个“ ”的内容。table是列出变量特征的频数。</p>
+<p>(.<em>,)|(\..</em>)：在,前的任意字符（用.*代替），或是.后的任意字符。其中\.是.在win下的转义，否则， ==. 不代表它本身而是任意字符==。</p>
+<pre><code>Capt          Col           Don          Dona           Dr     Jonkheer 
+ 1             4             1            1             8           1 
+Lady         Major         Master        Miss          Mlle        Mme 
+ 1             2            61           260             2          1 
+Mr           Mrs            Ms           Rev           Sir     the Countess 
+757           197           2             8             1            1 
+</code></pre><p>这些title可以被最终归类为四类：Mr, Mrs, Miss,  rare title</p>
+<pre><code>full$Title[full$Title==&quot;Mlle&quot;] &lt;- &quot;Miss&quot; # ==是否等于
+full$Title[full$Title==&quot;Mme&quot;] &lt;- &quot;Mrs&quot;
+full$Title[full$Title==&quot;Ms&quot;] &lt;- &quot;Miss&quot;
+full$Title[full$Title==&quot;Lady&quot;] &lt;- &quot;Miss&quot;
+full$Title[full$Title==&quot;Sir&quot;] &lt;- &quot;Mr&quot; 
+
+rare_title &lt;- c(&quot;Capt&quot;, &quot;Col&quot;, &quot;Don&quot;, &quot;Dona&quot;,&quot;Jonkheer&quot;, &quot;Major&quot;,&quot;Master&quot;, &quot;Rev&quot;, &quot;the Countess&quot;)
+</code></pre><blockquote>
+<p>X %in% Y : the first element of X is compared to all element of all of Y, then the second element of X is compared to all of Y,…,the last…</p>
+</blockquote>
+<p>得到最终的title分类</p>
+<pre><code>        Miss  Mr Mrs Rare Title
+female  265   0 198          3
+male      0 758   0         85
+</code></pre><p>另外，可以尝试提取姓氏，因为背后隐藏着种族信息。</p>
+<pre><code>full$Surname &lt;- gsub(&quot;(,.*)|(\\.*)&quot;,&quot;&quot;, full$Name)
+#或是用sapply
+full$Surname2 &lt;- sapply(full$Name, function(x) strsplit(x,split = &quot;[,.]&quot;)[[1]][1]) 
+
+#function和strsplit中间没有逗号只有空格
+
+#sapply(x,function)把x中的每个元素应用一次到function函数
+
+#strsplit(x,split=&apos;[.]&apos;)
+
+#[[1]][1]代表分割后的第一部分，[[1]][2]代表分割后的第二部分
+</code></pre><p>考虑到会不会有以家庭为单位一起溺水或一起获救的可能，我们生成家庭人数变量，以此观察家庭人数多少是否会影响结果。</p>
+<pre><code>full$Familysize &lt;- full$SibSp +full$Parch +1
+
+ggplot(full[1:891,],aes(x=Familysize,fill=factor(Survived))) + geom_bar(position=&quot;dodge&quot;)
+
+#ggplot(data,aes(x=,y=,fill=factor())) 指定初始化参数
+ +geom_bar/boxplot...(position=&quot;dodge&quot;) 图形层，bar的纵轴默认是频数。若要改纵轴，首先上一步aes(y=&quot;xxxx&quot;),其次图形层这一步geom_bar(stat=&quot;identity&quot;)。 position=&quot;dodge&quot;可以将不同类别并列画出柱状图
+ +scale_x_continuous(breaks=c(1:11))
+ +labs(x = &apos;Family Size&apos;) 更改刻度和轴标签
+#画图至少要叠加到图形层，单独一个基础层不够。
+</code></pre><p>得到如下结果</p>
+<p><img src="image/familysize.jpeg" alt=""></p>
+<p>可以看出2&lt;=familysize&lt;=4时，得救的几率更大，因此我们将familysize这个变量重新分类。</p>
+<pre><code>full$FamilysizeD[full$Familysize == 1] &lt;- &apos;singleton&apos;
+full$FamilysizeD[full$Familysize &lt;=4 &amp; full$Familysize &gt;=2] &lt;- &apos;small&apos;
+full$FamilysizeD[full$Familysize &gt;4] &lt;- &apos;large&apos;
+</code></pre><p>得到如下结果</p>
+<pre><code>table(full$FamilysizeD,full$Survived)    
+           0   1
+large      52  10
+singleton 374 163
+small     123 169
+</code></pre><ol start="2">
+<li>2 其他变量</li>
+</ol>
+<p>首先我们看下登船港口对生存情况的影响</p>
+<pre><code>mosaicplot(table(full$Embarked，full$Survived),main=&quot;Embarked by Survival&quot;,shade=TRUE)
+</code></pre><p><img src="image/Embarked.jpeg" alt=""></p>
+<p>其次我们分析票价对生存情况的影响</p>
+<pre><code>full$FareD[full$Fare &gt;0 &amp; full$Fare &lt;=40] &lt;- &quot;low&quot;
+full$FareD[full$Fare &gt;40 &amp; full$Fare &lt;=100] &lt;- &quot;median&quot;
+full$FareD[full$Fare &gt;100] &lt;- &quot;high&quot;
+
+mosaicplot(table(full$FareD,full$Survived),main=&quot;Fare price by survival&quot;,shade=TRUE)
+</code></pre><p><img src="image/Fareprice.jpeg" alt=""></p>
+<p>年龄变量也可以提取分类，但因为Age有缺失值，我们先进行缺失值处理。</p>
+<p>####summary</p>
+<p>特征工程：主要针对Name变量，提取身份和姓氏并分别新建两列变量。</p>
+<ul>
+<li>提取方法：sapply+strsplit</li>
+<li>替换字符的方法：gsub</li>
+<li>通配符的转义：[.] or \.</li>
+<li>ggplot的基础用法</li>
+<li>mosaicplot的使用</li>
+</ul>
+
+        </div>
+      </article>
+    </div>
+    <!-- Comments -->
+    <div class="container">
+      
+<section id="comment">
+  <!-- <h1 class="title">留言</h1> -->
+
+  
+</section>
+
+
+    </div>
+    <!-- Pre or Next -->
+    <div class="nav-links">
+      
+      
+        <div class="nav-next">
+          <a href="/2018/12/28/hello-world/" rel="prev">下一页 <span class="meta-arraw meta-arraw-right"></span></a>
+        </div>
+      
+    </div>
+
+  </div>
+</div>
+
+
+  <!-- Footer -->
+  <!-- Footer-widgets -->
+<div class="footer-widgets">
+  <div class="row inside-wrapper">
+    <div class="col-1-3">
+      <aside>
+        <h1 class="widget-title">关于本站</h1>
+        <div class="custom-widget-content">
+          
+          <p align="right">试验田与储藏间</p>
+        </div>
+      </aside>
+    </div>
+    <div class="col-1-3">
+      <aside>
+        <h1 class="widget-title">与我联系</h1>
+        <div class="widget-text">
+          
+            
+              <a href="https://github.com/Cathy96CAI" class="icon icon-github" target="_blank">github</a>
+            
+          
+        </div>
+      </aside>
+    </div>
+    <div class="col-1-3">
+      <aside>
+        <h1 class="widget-title">站内搜索</h1>
+        <div class="widget-text">
+          <form onsubmit="return appDaily.submitSearch('')">
+            <p>
+              <input type="text" placeholder="search..." id="homeSearchInput">
+            </p>
+            <!-- <input type="submit" value="GO"> -->
+          </form>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+<!-- Footer -->
+<footer class="site-info">
+  <p>
+    <span>Just A Store &copy; 2019</span>
+    
+      <span class="split">|</span>
+      <span>Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> with Theme <a href="https://github.com/GallenHu/hexo-theme-Daily" target="_blank">Daily</a></span>
+    
+  </p>
+</footer>
+
+
+  <!-- After footer scripts -->
+  <!-- scripts -->
+<script src="/js/app.js"></script>
+
+
+
+
+
+</body>
+
+</html>
