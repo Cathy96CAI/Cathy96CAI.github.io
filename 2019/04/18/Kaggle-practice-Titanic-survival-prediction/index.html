@@ -139,13 +139,9 @@
         </div>
         <!-- Post Main Content -->
         <div class="entry-content has_line_number">
-          <p>##Survival prediction on Titanic</p>
-<p>###Description</p>
-<p>泰坦尼克号沉没是历史上最臭名昭着的沉船之一。 1912年4月15日，在她的处女航中，泰坦尼克号在与冰山相撞后沉没，在2224名乘客和机组人员中造成1502人死亡。 造成海难失事的原因之一是乘客和机组人员没有足够的救生艇。 </p>
-<p>###Objective</p>
-<p>尽管幸存下沉有一些运气因素，但有些人比其他人更容易生存，例如妇女，儿童和上流社会。因此，我们希望运用Binary classification分析乘客特征并预测哪些乘客能幸免于悲剧。</p>
-<p>###Steps</p>
-<ul>
+          <h2 id="Survival-prediction-on-Titanic"><a href="#Survival-prediction-on-Titanic" class="headerlink" title="Survival prediction on Titanic"></a>Survival prediction on Titanic</h2><h3 id="Description"><a href="#Description" class="headerlink" title="Description"></a>Description</h3><p>泰坦尼克号沉没是历史上最臭名昭着的沉船之一。 1912年4月15日，在她的处女航中，泰坦尼克号在与冰山相撞后沉没，在2224名乘客和机组人员中造成1502人死亡。 造成海难失事的原因之一是乘客和机组人员没有足够的救生艇。 </p>
+<h3 id="Objective"><a href="#Objective" class="headerlink" title="Objective"></a>Objective</h3><p>尽管幸存下沉有一些运气因素，但有些人比其他人更容易生存，例如妇女，儿童和上流社会。因此，我们希望运用Binary classification分析乘客特征并预测哪些乘客能幸免于悲剧。</p>
+<h3 id="Steps"><a href="#Steps" class="headerlink" title="Steps"></a>Steps</h3><ul>
 <li>加载包和数据集</li>
 <li>特征工程</li>
 <li>缺失值处理</li>
@@ -153,8 +149,9 @@
 <li>预测</li>
 <li>总结</li>
 </ul>
-<p>###Detail</p>
-<p>1.加载包和数据集</p>
+<h3 id="Detail"><a href="#Detail" class="headerlink" title="Detail"></a>Detail</h3><ol>
+<li>加载包和数据集</li>
+</ol>
 <hr>
 <pre><code>setwd(&quot;C:/Users/czwcj/Desktop/titanic&quot;)  #记得加&quot;&quot;
 library(&apos;ggplot2&apos;)   #visualization
@@ -228,7 +225,7 @@ ggplot(full[1:891,],aes(x=Familysize,fill=factor(Survived))) + geom_bar(position
  +labs(x = &apos;Family Size&apos;) 更改刻度和轴标签
 #画图至少要叠加到图形层，单独一个基础层不够。
 </code></pre><p>得到如下结果</p>
-<p><img src="image/familysize.jpeg" alt=""></p>
+<p><img src="/2019/04/18/Kaggle-practice-Titanic-survival-prediction/familysize.jpeg" alt="familysize"></p>
 <p>可以看出2&lt;=familysize&lt;=4时，得救的几率更大，因此我们将familysize这个变量重新分类。</p>
 <pre><code>full$FamilysizeD[full$Familysize == 1] &lt;- &apos;singleton&apos;
 full$FamilysizeD[full$Familysize &lt;=4 &amp; full$Familysize &gt;=2] &lt;- &apos;small&apos;
@@ -244,17 +241,16 @@ small     123 169
 </ol>
 <p>首先我们看下登船港口对生存情况的影响</p>
 <pre><code>mosaicplot(table(full$Embarked，full$Survived),main=&quot;Embarked by Survival&quot;,shade=TRUE)
-</code></pre><p><img src="image/Embarked.jpeg" alt=""></p>
+</code></pre><p><img src="/2019/04/18/Kaggle-practice-Titanic-survival-prediction/Embarked.jpeg" alt="Embarked"></p>
 <p>其次我们分析票价对生存情况的影响</p>
 <pre><code>full$FareD[full$Fare &gt;0 &amp; full$Fare &lt;=40] &lt;- &quot;low&quot;
 full$FareD[full$Fare &gt;40 &amp; full$Fare &lt;=100] &lt;- &quot;median&quot;
 full$FareD[full$Fare &gt;100] &lt;- &quot;high&quot;
 
 mosaicplot(table(full$FareD,full$Survived),main=&quot;Fare price by survival&quot;,shade=TRUE)
-</code></pre><p><img src="image/Fareprice.jpeg" alt=""></p>
+</code></pre><p><img src="/2019/04/18/Kaggle-practice-Titanic-survival-prediction/Fareprice.png" alt="Fareprice"></p>
 <p>年龄变量也可以提取分类，但因为Age有缺失值，我们先进行缺失值处理。</p>
-<p>####summary</p>
-<p>特征工程：主要针对Name变量，提取身份和姓氏并分别新建两列变量。</p>
+<h4 id="summary"><a href="#summary" class="headerlink" title="summary"></a>summary</h4><p>特征工程：主要针对Name变量，提取身份和姓氏并分别新建两列变量。</p>
 <ul>
 <li>提取方法：sapply+strsplit</li>
 <li>替换字符的方法：gsub</li>
